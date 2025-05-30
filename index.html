@@ -279,5 +279,64 @@
             </div>
         </main>
     </div>
+
+    <script>
+        new Vue({
+            el:'#app',
+            data:{
+                isLoading: true,
+                isCheckingOut: false,
+                selectedSubject: '',
+                sortAttribute: 'subject',
+                sortOrder: 'asc',
+                showCart: false,
+                searchQuery: '',
+                cartItems: [],
+                lessons: [],
+                customerName: '',
+                customerPhone: '',
+                nameError: false,
+                phoneError: false,
+                isCheckoutValid: false,
+                baseURL:'http://localhost:3000'
+            },
+            computed: {
+                sortedLessons() {
+                    let filteredLessons = this.lessons;
+
+                   if (this.searchQuery) {
+                        const query = this.searchQuery.toLowerCase();
+                        filteredLessons = this.lessons.filter(lesson => {
+                            const combined = [
+                                lesson.subject,
+                                lesson.location,
+                                lesson.price,
+                                lesson.spaces
+                            ].join(' ').toLowerCase();
+                            return combined.includes(query);
+                        });
+                    }
+
+                    return filteredLessons.sort((a, b) => {
+                        let comparison = 0;
+
+                        switch(this.sortAttribute) {
+                            case 'subject':
+                            case 'location':
+                                comparison = a[this.sortAttribute].localeCompare(b[this.sortAttribute]);
+                                break;
+
+                            case 'price':
+                            case 'spaces':
+                                comparison = a[this.sortAttribute] - b[this.sortAttribute];
+                                break;
+                        }
+
+                        return this.sortOrder === 'asc' ? comparison : -comparison;
+                    });
+                },
+            }
+        })
+    </script>
 </body>
 </html>
