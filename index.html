@@ -335,6 +335,154 @@
                         return this.sortOrder === 'asc' ? comparison : -comparison;
                     });
                 },
+                cartTotal() {
+                    return this.cartItems.reduce((total, item) => total + item.price, 0);
+                }
+            },
+            methods: {
+                toggleCart() {
+                    this.showCart = !this.showCart;
+                },
+                async fetchAllLessons() {
+                    this.isLoading = true;
+                    try {
+                        const response = await fetch(`${this.baseURL}/api/lessons`);
+                        if (response.ok) {
+                            const lessons = await response.json();
+                            this.lessons = lessons;
+                            } else {
+                                console.error('Failed to fetch lessons:', await response.text());
+                            }
+                        } catch (error) {
+                            console.error('Error fetching lessons:', error);
+                        } finally {
+                            this.isLoading = false;
+                        }
+                    },
+                addToCart(lesson) {
+                    if (lesson.spaces > 0) {
+                        this.cartItems.push({...lesson});
+                        lesson.spaces--;
+                    }
+                },
+                removeFromCart(item) {
+                    const index = this.cartItems.indexOf(item);
+                    if (index > -1) {
+                        this.cartItems.splice(index, 1);
+                        const originalLesson = this.lessons.find(l => l.id === item.id);
+                        if (originalLesson) {
+                            originalLesson.spaces++;
+                        }
+                    }
+                },
+                validateName() {
+                    const nameRegex = /^[A-Za-z\s]+$/;
+                    this.nameError = !nameRegex.test(this.customerName);
+                    this.updateCheckoutValidity();
+                },
+                validatePhone() {
+                    const phoneRegex = /^[0-9]+$/;
+                    this.phoneError = !phoneRegex.test(this.customerPhone);
+                    this.updateCheckoutValidity();
+                },
+                updateCheckoutValidity() {
+                    this.isCheckoutValid = 
+                        this.customerName.length > 0 && 
+                        this.customerPhone.length > 0 && 
+                        !this.nameError && 
+                        !this.phoneError &&
+                        this.cartItems.length > 0;
+                },
+                async checkout() {
+                        if (!this.isCheckoutValid) return;
+
+                        this.isCheckingOut = true;
+                        const orderData = {
+                            name: this.customerName,
+                            phoneNumber: this.customerPhone,
+                            lessonIds: this.cartItems.map(item => item._id),
+                            spaces: this.cartItems.length
+                        };
+
+                        try {
+                            await this.saveOrder(orderData);
+                            
+                            for (const item of this.cartItems) {
+                                const lessonToUpdate = this.lessons.find(l => l._id === item._id);
+                                if (lessonToUpdate) {
+                                    await this.updateLessonSpaces(
+                                        item._id,
+                                        lessonToUpdate.spaces
+                                    );
+                                }
+                            }
+                            
+                            await this.fetchAllLessons();
+                            
+                            alert(`Thank you ${this.customerName}! Your order has been submitted successfully.\nTotal: $${this.cartTotal}`);
+                            this.cartItems = [];
+                            this.customerName = '';
+                            this.customerPhone = '';
+                            this.showCart = false;
+                        } catch (error) {
+                            console.error('Error during checkout:', error);
+                            alert('There was an error processing your order. Please try again.');
+                        } finally {
+                            this.isCheckingOut = false;
+                        }
+                    },
+                                async saveOrder(orderData) {
+                    try {
+                        const response = await fetch(`${this.baseURL}/api/orders`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(orderData)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to save order');
+                        }
+
+                        return await response.json();
+                    } catch (error) {
+                        console.error('Error saving order:', error);
+                        throw error;
+                    }
+                },
+              
+async updateLessonSpaces(lessonId, spaces) {
+    try {
+        const cleanLessonId = lessonId.toString().replace(/ObjectId\(['"](.+)['"]\)/, '$1');
+        console.log('Updating lesson with ID:', cleanLessonId);
+        console.log('New spaces value:', spaces); 
+        
+        const response = await fetch(`${this.baseURL}/api/lessons/${cleanLessonId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ spaces: parseInt(spaces) })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server response:', errorText); 
+            throw new Error('Failed to update lesson spaces');
+        }
+
+        const updatedLesson = await response.json();
+        console.log('Updated lesson response:', updatedLesson); 
+        return updatedLesson;
+    } catch (error) {
+        console.error('Error updating lesson spaces:', error);
+        throw error;
+    }
+}
+            },
+            created() {
+                this.fetchAllLessons();
             }
         })
     </script>
