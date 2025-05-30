@@ -154,7 +154,7 @@
                     </div>
                 </div>
 
-                <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6 [column-fill:_balance]"><!-- custom masonry -->
+                <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6 [column-fill:_balance]">
                     <div 
                         v-for="lesson in sortedLessons"
                         class="bg-white rounded-2xl shadow-xl border border-blue-100 hover:shadow-2xl transition-all duration-200 overflow-hidden mb-6 break-inside-avoid relative group">
@@ -186,9 +186,94 @@
                                 class="mt-4 w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-2 rounded-full font-bold shadow hover:from-indigo-500 hover:to-blue-500 transition-all duration-200 disabled:opacity-50">
                                 {{lesson.spaces === 0 ? 'Sold Out' : 'Add to Cart'}}
                             </button>
-                            
                             <div class="absolute inset-0 bg-blue-100 opacity-0 group-hover:opacity-10 transition-opacity duration-200 pointer-events-none rounded-2xl"></div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-else class="bg-white p-8 rounded-2xl shadow-xl border border-blue-100">
+                <h2 class="text-2xl font-bold mb-6">Shopping Cart</h2>
+                <div v-if="cartItems.length === 0" class="text-center py-8 text-gray-600">
+                    Your cart is empty
+                </div>
+                <div v-else>
+                    <div class="space-y-4 mb-8">
+                        <div 
+                            v-for="item in cartItems"
+                            class="border-b py-4 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold">{{item.subject}}</h3>
+                                <p class="text-gray-600">
+                                    <i class="fas fa-map-marker-alt mr-2"></i>
+                                    {{item.location}}
+                                </p>
+                                <p class="text-gray-600">
+                                    <i class="fas fa-clock mr-2"></i>
+                                    {{item.time}}
+                                </p>
+                                <p class="text-blue-600 font-semibold">
+                                    <i class="fas fa-dollar-sign mr-2"></i>
+                                    {{item.price}}
+                                </p>
+                            </div>
+                            <button 
+                                @click="removeFromCart(item)"
+                                class="text-red-600 hover:text-red-800 px-4 py-2">
+                                <i class="fas fa-trash mr-2"></i>
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-6">
+                        <h3 class="text-xl font-bold mb-4">Customer Information</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">
+                                    Name
+                                </label>
+                                <input 
+                                    type="text" 
+                                    v-model="customerName"
+                                    @input="validateName"
+                                    class="border rounded p-2 w-full"
+                                    :class="{'border-red-500': nameError}"
+                                    placeholder="Enter your name"
+                                >
+                                <p v-if="nameError" class="text-red-500 text-sm mt-1">
+                                    Name must contain letters only
+                                </p>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">
+                                    Phone
+                                </label>
+                                <input 
+                                    type="tel" 
+                                    v-model="customerPhone"
+                                    @input="validatePhone"
+                                    class="border rounded p-2 w-full"
+                                    :class="{'border-red-500': phoneError}"
+                                    placeholder="Enter your phone number"
+                                >
+                                <p v-if="phoneError" class="text-red-500 text-sm mt-1">
+                                    Phone must contain numbers only
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-between items-center">
+                        <div class="text-xl font-bold">
+                            Total: ${{cartTotal}}
+                        </div>
+                        <button 
+                            @click="checkout"
+                            :disabled="!isCheckoutValid"
+                            class="bg-gradient-to-r from-red-400 to-red-600 text-white px-6 py-2 rounded-full font-bold shadow hover:from-red-600 hover:to-red-400 transition-all duration-200">
+                            Checkout
+                        </button>
                     </div>
                 </div>
             </div>
